@@ -7,4 +7,7 @@ import UI (app)
 
 
 main :: IO ()
-main = defaultMain app ()
+main = do
+  game <- initGameFull defaultSettings
+  finalState <- defaultMain app game
+  return ()
