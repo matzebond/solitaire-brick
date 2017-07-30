@@ -1,49 +1,57 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell, FlexibleContexts #-}
 module Solitaire where
 
+import Lens.Micro.TH (makeLenses)
+import Lens.Micro ((&), (.~), (%~), (^.))
 import Data.Array
 import Data.Maybe
 import qualified Data.Foldable as F (and)
 import System.Random
 import Control.Monad
 import Control.Monad.State.Lazy
+
 import PlayingCards
 import MyUtil
 
-data Column = Column { sequence :: [Card],
-                       hiddenStack :: [Card]}
+
+data Column = Column { _frontS :: [Card],
+                       _hiddenS :: [Card]}
             deriving (Show)
 
-data SolitaireGame = SolitaireGame { drawStack :: [Card],
-                                     wastePile :: [Card],
-                                     foundations :: Array Int [Card],
-                                     tableau :: Array Int Column,
-                                     gameSettings :: SolitaireGameSettings}
+data SolitaireGame = SolitaireGame { _drawStack :: [Card],
+                                     _wastePile :: [Card],
+                                     _foundations :: Array Int [Card],
+                                     _tableau :: Array Int Column,
+                                     _gameSettings :: SolitaireSettings}
 
-data SolitaireGameSettings = SolitaireGameSettings { drawThreeMode :: Bool,
+data SolitaireSettings = SolitaireSettings { drawThreeMode :: Bool,
                                                      playStackNum :: Int }
 
-defaultSettings :: SolitaireGameSettings
-defaultSettings = SolitaireGameSettings True 7
+makeLenses ''SolitaireGame
+makeLenses ''Column
+makeLenses ''SolitaireSettings
+
+defaultSettings :: SolitaireSettings
+defaultSettings = SolitaireSettings True 7
 
 data SolitairePos = WastePile
                  | Foundation Int
-                 | Tableau Int Int 
+                 | Tableau Int Int
 
-initGameFull :: SolitaireGameSettings -> IO SolitaireGame
+initGameFull :: SolitaireSettings -> IO SolitaireGame
 initGameFull settings = do
   rng <- getStdGen
   let shuffledDeck = shuffle rng fullDeck
   return $ initGame settings shuffledDeck
 
 -- build a SolitaireGame from a shuffled deck
-initGame :: SolitaireGameSettings -> Deck -> SolitaireGame
+initGame :: SolitaireSettings -> Deck -> SolitaireGame
 initGame s deck = (SolitaireGame remainDeck [] found tab s)
   where n = playStackNum s
         hiddenCardsNum = n*(n+1) `div` 2
         (hiddenCards, remainDeck) = splitAt hiddenCardsNum deck
         hiddenStacks = map (\x -> Column [head x] (tail x)) $ splitStacks hiddenCards
-        found = listArray (0,3) []
+        found = listArray (0,3) (repeat [])
         tab = (listArray (0,(n-1)) hiddenStacks)
 
 nonShuffledSolitaireGame :: SolitaireGame

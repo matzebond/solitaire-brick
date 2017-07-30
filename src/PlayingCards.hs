@@ -1,15 +1,23 @@
+{-# LANGUAGE TemplateHaskell #-}
 module PlayingCards where
 
-import System.Random
+import Lens.Micro.TH (makeLenses)
+import Lens.Micro ((&), (.~), (%~), (^.))
 import Data.List (sortBy)
 import Data.Function  (on)
+import System.Random
 
-data Color = Red | Black deriving (Eq, Show, Enum)
-data Suit = Diamond | Heart | Spade | Club deriving (Eq, Show, Enum)
-data Face = Ace | Two | Three | Four | Five | Six | Seven | Eight | Nine | Ten | Jack | Queen | King deriving (Eq, Show, Enum, Ord)
-data Card = Card { suit :: Suit,
-                   face :: Face}
-          deriving (Eq)
+data Color = Red | Black
+           deriving (Eq, Enum)
+data Suit = Diamond | Heart | Spade | Club
+          deriving (Eq, Enum, Show)
+data Face = Ace | Two | Three | Four | Five | Six | Seven | Eight | Nine | Ten | Jack | Queen | King
+          deriving (Eq, Enum, Ord, Show)
+data Card = Card { _suit :: Suit,
+                   _face :: Face}
+          deriving (Eq, Show)
+
+makeLenses ''Card
 
 colorSuit :: Suit -> Color
 colorSuit Diamond = Red
@@ -32,36 +40,60 @@ fullDeck = map (uncurry Card) ((,) <$> allSuits <*> allFaces)
   -- alternative
   -- fullDeck = [Card s f | s <- allSuits, f <- allFaces]
 
-instance Show Card where
-  show (Card s f) = show f ++ " of " ++ show s ++ "s"
-  --show c = short c
+class Abbrev a where
+  abbrev :: a -> String
 
-class Short a where
-  short :: a -> String
+instance Abbrev Suit where
+  abbrev Diamond = "d"
+  abbrev Heart = "h"
+  abbrev Spade = "s"
+  abbrev Club = "c"
 
-instance Short Suit where
-  short Diamond = "d"
-  short Heart = "h"
-  short Spade = "s"
-  short Club = "c"
+instance Abbrev Face where
+  abbrev Ace = "A"
+  abbrev Two = "2"
+  abbrev Three = "3"
+  abbrev Four = "4"
+  abbrev Five = "5"
+  abbrev Six = "6"
+  abbrev Seven = "7"
+  abbrev Eight = "8"
+  abbrev Nine = "9"
+  abbrev Ten = "T"
+  abbrev Jack = "J"
+  abbrev Queen = "Q"
+  abbrev King = "K"
 
-instance Short Face where
-  short Ace = "A"
-  short Two = "2"
-  short Three = "3"
-  short Four = "4"
-  short Five = "5"
-  short Six = "6"
-  short Seven = "7"
-  short Eight = "8"
-  short Nine = "9"
-  short Ten = "T"
-  short Jack = "J"
-  short Queen = "Q"
-  short King = "K"
+instance Abbrev Card where
+  abbrev (Card s f) = abbrev f ++ abbrev s
 
-instance Short Card where
-  short (Card s f) = short f ++ short s
+class Get a where
+  get :: String -> a
+
+instance Get Suit where
+  get "d" = Diamond
+  get "h" = Heart
+  get "s" = Spade
+  get "c" = Club
+
+instance Get Face where
+  get "A" = Ace
+  get "2" = Two
+  get "3" = Three
+  get "4" = Four
+  get "5" = Five
+  get "6" = Six
+  get "7" = Seven
+  get "8" = Eight
+  get "9" = Nine
+  get "T" = Ten
+  get "J" = Jack
+  get "Q" = Queen
+  get "K" = King
+
+instance Get Card where
+  get [face,suit] = Card (get [suit]) (get [face])
+
 
 shuffle :: StdGen -> [a] -> [a]
 shuffle gen xs = map fst $ sortBy (compare `on` snd) zipped

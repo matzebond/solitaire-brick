@@ -19,7 +19,15 @@ executable solitaire
   main-is:             Main.hs
   -- other-modules:       
   -- other-extensions:    
-  build-depends:       array >= 0.5.1.1, base >=4.9 && <4.10, brick, mtl >= 2.2.1, random, text >=1.2 && <1.3, vty
+  build-depends:       array >= 0.5.1.1,
+                       base >=4.9 && <4.10,
+                       brick,
+                       microlens,
+                       microlens-th,
+                       mtl >= 2.2.1,
+                       random,
+                       text >=1.2 && <1.3,
+                       vty
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -threaded
